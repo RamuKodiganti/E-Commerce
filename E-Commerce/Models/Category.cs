@@ -18,7 +18,6 @@ namespace E_comm.Models
         [StringLength(30, ErrorMessage = "Product name must be less than 30 characters")]
         public string CategoryName { get; set; }
 
-       // public ICollection<Product> Products { get; set; }
     }
 
 }

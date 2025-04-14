@@ -1,4 +1,5 @@
-﻿using E_comm.Models;
+﻿using e_comm.DTO;
+using E_comm.Models;
 
 namespace e_comm.Repository
 {
@@ -7,7 +8,7 @@ namespace e_comm.Repository
         List<Category> GetCategories();
         Category GetCategoryById(int id);
 
-        List<Product> GetProductsByCategorySortedByPrice(int categoryId);
+        List<ProductWithCategoryDTO> GetProductsByCategorySortedByPrice(int categoryId);
         int GetTotalStockForCategory(int id);
         int AddCategory(Category category);
 
@@ -16,5 +17,3 @@ namespace e_comm.Repository
         int DeleteCategory(int id);
     }
 }
-
-

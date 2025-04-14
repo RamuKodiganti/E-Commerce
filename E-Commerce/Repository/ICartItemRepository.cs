@@ -11,6 +11,6 @@ namespace e_comm.Repository
         Task UpdateCartItemAsync(CartItem cartItem);
         Task DeleteCartItemAsync(int cartItemId);
 
-        Order CheckOutCart(int cartId);
+        Task<Order> CheckOutCartAsync(int cartId);
     }
 }

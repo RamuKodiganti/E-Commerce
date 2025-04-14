@@ -8,14 +8,15 @@ namespace e_comm.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [JsonIgnore]
         public int UserId { get; set; }
-        //[JsonIgnore]
         [Required]
         [StringLength(10)]
         [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Name must contain only letters.")]
         public string UserName { get; set; }
 
         [Required]
+        //[RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Can you please enter valid mail")]
         [EmailAddress(ErrorMessage = "Can you please enter valid mail")]
         public string Email { get; set; }
 
@@ -28,9 +29,9 @@ namespace e_comm.Models
         [Required]
         public string Role { get; set; }
 
-      //  [JsonIgnore]
+        [JsonIgnore]
 
-       // public  ShoppingCart ShoppingCart { get; set; }
+        public ShoppingCart? ShoppingCart { get; set; }
     }
 }
 

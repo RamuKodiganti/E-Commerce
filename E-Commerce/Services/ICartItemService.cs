@@ -12,5 +12,6 @@ namespace e_comm.Services
         Task DeleteCartItemAsync(int cartItemId);
 
         Task<Order> CheckOutCartAsync(int cartId);
+        void UpdateCartItemStatus(int cartItemId, CartItemStatus newStatus);
     }
 }

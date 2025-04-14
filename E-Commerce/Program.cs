@@ -10,15 +10,53 @@ using Microsoft.IdentityModel.Tokens;
 using e_comm.Aspects;
 using Ecommerce.Aspects;
 using e_comm.Repository;
+using Microsoft.OpenApi.Models;
+using E_Commerce.Repository;
+using Microsoft.AspNetCore.Builder;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args); 
 
-// Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();  
+builder.Services.AddEndpointsApiExplorer(); 
+
+builder.Services.AddSwaggerGen(options =>
+{
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        BearerFormat = "JWT",
+        Name = "Authorization",
+        In = ParameterLocation.Header,                          
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        Description = "Enter your JWT Access Token",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    options.AddSecurityDefinition("Bearer", jwtSecurityScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
+    });
+});
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
+
 builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -28,7 +66,7 @@ builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IWishListRepository, WishList_Repository>();
 builder.Services.AddScoped<IWishListService, WishListService>();
-
+builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
 builder.Services.AddScoped<ICartItemRepository, CartItemRepository>();
 builder.Services.AddScoped<ICartItemService, CartItemService>();
 
@@ -44,7 +82,6 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 //builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<OrderExceptionHandlerAttribute>();
-builder.Services.AddScoped<OrderItemExceptionHandlerAttribute>();
 
 //Order Services End
 
@@ -99,6 +136,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowSpecificOrigin");
+
 
 app.UseHttpsRedirection();
 

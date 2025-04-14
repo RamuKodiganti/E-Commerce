@@ -2,22 +2,30 @@
 using E_comm.Services;
 using Microsoft.AspNetCore.Mvc;
 using E_comm.Exceptions;
+using e_comm.Auth;
 using e_comm.DTO;
 using E_comm.Aspects;
+using Microsoft.AspNetCore.Authorization;
+using e_comm.Controllers;
+using E_Commerce.DTO;
 
 namespace E_comm.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class ProductController : ControllerBase
     {
         private readonly IProductService service;
+        private readonly IAuth auth;
 
-        public ProductController(IProductService service)
+        public ProductController(IAuth auth, IProductService service)
         {
+            this.auth = auth;
             this.service = service;
         }
 
+        //[AllowAnonymous]
         [HttpGet]
         public IActionResult Get()
         {
@@ -31,6 +39,7 @@ namespace E_comm.Controllers
             }
         }
 
+        //[Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public IActionResult GetProductById(int id)
         {
@@ -48,6 +57,7 @@ namespace E_comm.Controllers
             }
         }
 
+        //[AllowAnonymous]
         [HttpGet("Search")]
         public IActionResult GetProductByName(string name)
         {
@@ -70,11 +80,12 @@ namespace E_comm.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception here
                 return StatusCode(500, new { message = "An error occurred while processing your request." });
             }
         }
 
+
+        //[Authorize(Roles = "Admin")]
         [HttpGet("stock/{id}")]
         public IActionResult GetStockAvailability(int id)
         {
@@ -98,68 +109,49 @@ namespace E_comm.Controllers
             }
         }
 
-        [HttpPost]
 
+        //[Authorize(Roles = "Admin")]
+        [HttpPost]
         public IActionResult Post(ProductCreateDto productDto)
 
         {
-
             if (!ModelState.IsValid)
-
             {
-
                 return BadRequest(ModelState);
-
             }
 
             var categoryExists = service.CategoryExists(productDto.CategoryId);
 
             if (!categoryExists)
-
             {
-
                 return NotFound("Category does not exist.");
-
             }
 
             var product = new Product
-
             {
-
-                //ProductId = productDto.ProductId,
-
                 ProductName = productDto.ProductName,
-
                 Desc = productDto.Desc,
-
                 StockQuantity = productDto.StockQuantity,
-
                 Price = productDto.Price,
-
                 CategoryId = productDto.CategoryId,
-
                 Imgurl = productDto.Imgurl
-
             };
 
             var createdProduct = service.AddProduct(product);
-
-
             var Message = "Product added successfully";
 
-            //return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, createdProduct,response);
-
             return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, Message);
-
         }
 
 
+        //[Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public IActionResult Put(int id, Product product)
+        public IActionResult Put(int id, [FromBody] ProductUpdateDto product)
         {
             try
             {
-                return Ok(service.UpdateProduct(id, product));
+                var result = service.UpdateProduct(id, product);
+                return Ok("Product updated.");
             }
             catch (ProductNotFoundException ex)
             {
@@ -171,6 +163,8 @@ namespace E_comm.Controllers
             }
         }
 
+
+        //[Authorize(Roles = "Admin")]
         [HttpDelete]
         [Route("{id}")]
         public IActionResult Delete(int id)
@@ -193,6 +187,8 @@ namespace E_comm.Controllers
             }
         }
 
+
+        //[AllowAnonymous]
         [HttpGet("sorted-by-price")]
         public IActionResult SortProductByPriceDesc()
         {
@@ -204,6 +200,35 @@ namespace E_comm.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
+            }
+        }
+
+
+        [AllowAnonymous]
+        [HttpGet("ByCategory")]
+        public IActionResult GetProductByCategory(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return BadRequest(new { message = "Category name is required." });
+            }
+
+            try
+            {
+                var products = service.GetProductByCategory(categoryName);
+                if (products != null)
+                {
+                    return Ok(products);
+                }
+                else
+                {
+                    return NotFound(new { message = "No products found for the specified category." });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "An error occurred while processing your request." });
             }
         }
     }

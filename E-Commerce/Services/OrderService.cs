@@ -1,7 +1,7 @@
-﻿using e_comm.Exceptions;
-using e_comm.Models.Orders;
+﻿using e_comm.Models.Orders;
 using e_comm.Repository;
 using Ecommerce.Exceptions;
+using e_comm.Aspects;
 
 namespace e_comm.Services
 {
@@ -15,14 +15,13 @@ namespace e_comm.Services
         }
 
 
-        public int PlaceOrder(Order order)
+        public int PlaceOrderByOrderId(int orderId, string shippingAddress, PaymentStatus paymentStatus)
         {
-            if (_orderRepository.GetOrderByOrderId(order.OrderId) != null)
+            if (_orderRepository.GetOrderByOrderId(orderId) == null)
             {
-                throw new OrderAlreadyExistsException($"Order with Order Id {order.OrderId} already exists");
-
+                throw new OrderNotFoundException($"Order with Order Id {orderId} does not exist");
             }
-            return _orderRepository.PlaceOrder(order);
+            return _orderRepository.PlaceOrderByOrderId(orderId, shippingAddress, paymentStatus);
         }
 
         public int CancelOrder(int orderId)
@@ -54,40 +53,46 @@ namespace e_comm.Services
             return _orderRepository.GetOrderByUserId(userId);
         }
 
-        public int UpdateOrder(int orderId, Order order)
+        public void UpdateShippingAddress(int orderId, string shippingAddress)
         {
-            if (_orderRepository.GetOrderByOrderId(orderId) == null)
+            var order = _orderRepository.GetOrderByOrderId(orderId);
+            if (order == null)
             {
-                throw new OrderNotFoundException($"Order with Order Id {orderId} does not exists");
+                throw new OrderNotFoundException($"Order with Order Id {orderId} does not exist");
             }
-            return _orderRepository.UpdateOrder(orderId, order);
+            order.ShippingAddress = shippingAddress;
+            _orderRepository.UpdateOrder(orderId, order);
         }
 
-        public int UpdateOrderStatus(int orderId, OrderStatus newStatus)
+        public void UpdateOrderStatusAutomatically(int orderId)
+        {
+            var order = _orderRepository.GetOrderByOrderId(orderId);
+            if (order == null)
+            {
+                throw new OrderNotFoundException($"Order with ID {orderId} does not exist.");
+            }
+
+            order.OrderStatus = _orderRepository.CalculateOrderStatus(order);
+            _orderRepository.UpdateOrder(orderId, order);
+        }
+
+        public OrderStatus GetOrderStatus(int orderId)
+        {
+            var orderStatus = _orderRepository.GetOrderStatus(orderId);
+            if (orderStatus == default(OrderStatus))
+            {
+                throw new OrderNotFoundException($"Order with ID {orderId} does not exist.");
+            }
+            return orderStatus;
+        }
+
+        public bool UpdateTotalCalculations(int orderId)
         {
             if (_orderRepository.GetOrderByOrderId(orderId) == null)
             {
                 throw new OrderNotFoundException($"Order with Order Id {orderId} does not exist");
             }
-            return _orderRepository.UpdateOrderStatus(orderId, newStatus);
-        }
-
-        //public int UpdateOrderTotal(int orderId, decimal newTotalBaseAmount, decimal newShippingCost)
-        //{
-        //    if (_orderRepository.GetOrderByOrderId(orderId) == null)
-        //    {
-        //        throw new OrderNotFoundException($"Order with Order Id {orderId} does not exist");
-        //    }
-        //    return _orderRepository.UpdateOrderTotal(orderId, newTotalBaseAmount, newShippingCost);
-        //}
-
-        public bool UpdateTotalBaseAmount (int orderId)
-        {
-            if(_orderRepository.GetOrderByOrderId(orderId) == null)
-            {
-                throw new OrderNotFoundException($"Order with Order Id {orderId} does not exist");
-            }
-            return _orderRepository.UpdateTotalBaseAmount(orderId);
+            return _orderRepository.UpdateTotalCalculations(orderId);
         }
     }
 }

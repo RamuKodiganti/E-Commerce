@@ -1,6 +1,8 @@
 ﻿using e_comm.Models;
 using e_comm.Models.Orders;
 using e_comm.Services;
+using E_Commerce.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +20,8 @@ namespace e_comm.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "user")]
+
         public async Task<IActionResult> AddCartItem(CartItemDto cartItemDto)
         {
             try
@@ -37,21 +41,32 @@ namespace e_comm.Controllers
                 // Log the exception
                 return StatusCode(500, "Internal server error");
             }
-        }
+        }   
+
+
 
         [HttpGet("cart/{cartId}")]
+        [Authorize(Roles = "user")]
+
         public async Task<ActionResult<IEnumerable<CartItem>>> GetCartItemsByCartId(int cartId)
         {
             try
             {
                 var items = await _cartItemService.GetCartItemsByCartIdAsync(cartId);
+
+                if (items == null || !items.Any())
+                {
+                    return NotFound("Cart not found or is empty.");
+                }
+
                 return Ok(items);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Internal server error");
             }
         }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<CartItem>> GetCartItem(int id)
@@ -61,17 +76,19 @@ namespace e_comm.Controllers
                 var cartItem = await _cartItemService.GetCartItemByIdAsync(id);
                 if (cartItem == null)
                 {
-                    return NotFound();
+                    return NotFound("CartItemId Not Found.");
                 }
                 return Ok(cartItem);
             }
-            catch (Exception ex)
+            catch (Exception )
             {
                 return StatusCode(500, "Internal server error");
             }
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "user")]
+
         public async Task<IActionResult> UpdateCartItem(int id, CartItem cartItem)
         {
             if (id != cartItem.CartItemId)
@@ -84,13 +101,16 @@ namespace e_comm.Controllers
                 await _cartItemService.UpdateCartItemAsync(cartItem);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception )
             {
                 return StatusCode(500, "Internal server error");
             }
         }
 
+
         [HttpDelete("{id}")]
+        [Authorize(Roles = "user")]
+
         public async Task<IActionResult> DeleteCartItem(int id)
         {
             try
@@ -98,11 +118,12 @@ namespace e_comm.Controllers
                 await _cartItemService.DeleteCartItemAsync(id);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception )
             {
                 return StatusCode(500, "Internal server error");
             }
         }
+
 
         [HttpPost("checkout/{cartId}")]
         public async Task<IActionResult> Checkout(int cartId)
@@ -119,33 +140,11 @@ namespace e_comm.Controllers
             catch (Exception ex)
             {
                 // Log the exception if needed
+                Console.WriteLine($"Checkout error: {ex.Message}");
                 return StatusCode(500, "An error occurred during checkout.");
             }
         }
 
-        //total price
-        //[HttpGet("cart/{cartId}/total")]
-        //public async Task<ActionResult<decimal>> GetTotalPriceByCartId(int cartId)
-        //{
-        //    try
-        //    {
-        //        var cartItems = await _cartItemService.GetCartItemsByCartIdAsync(cartId);
-
-        //        if (cartItems == null || !cartItems.Any())
-        //        {
-        //            return NotFound(new { Message = "Cart not found or is empty." });
-        //        }
-
-        //        var totalPrice = await _cartItemService.GetTotalPriceByCartIdAsync(cartId);
-        //        return Ok(new { TotalPrice = totalPrice });
-
-        //    }
-        //    catch (Exception)
-        //    {
-        //        // Log the exception
-        //        return StatusCode(500, "Internal server error");
-        //    }
-        //}
-
+       
     }
 }

@@ -1,12 +1,13 @@
 ﻿using e_comm.Models.Orders;
 using Microsoft.EntityFrameworkCore;
 using E_comm.Models;
+using Ecommerce.Exceptions;
 namespace e_comm.Repository
 {
     public class OrderRepository : IOrderRepository
     {
         private readonly DataContext _context;
-        private readonly string _connectionString;
+        private readonly string? _connectionString;
 
         public OrderRepository(DataContext context, IConfiguration configuration)
         {
@@ -14,11 +15,18 @@ namespace e_comm.Repository
             _connectionString = configuration.GetConnectionString("SqlConnection");
         }
 
-        public int PlaceOrder(Order order)
+        public int PlaceOrderByOrderId(int orderId, string shippingAddress, PaymentStatus paymentStatus)
         {
-            _context.Orders_.Add(order);
-            int result = _context.SaveChanges();
-            return result;
+            var order = _context.Orders_.FirstOrDefault(o => o.OrderId == orderId);
+            if (order != null)
+            {
+                order.ShippingAddress = shippingAddress;
+                order.PaymentStatus = paymentStatus;
+
+                _context.Entry(order).State = EntityState.Modified;
+                return _context.SaveChanges();
+            }
+            return 0; // Return 0 if the order was not found
         }
 
         public int CancelOrder(int orderId)
@@ -30,7 +38,7 @@ namespace e_comm.Repository
 
         public Order GetOrderByOrderId(int orderId)
         {
-            return _context.Orders_.Include(oi=> oi.OrderItems_).Where(x => x.OrderId == orderId).FirstOrDefault();
+            return _context.Orders_.Include(oi => oi.OrderItems_).Where(x => x.OrderId == orderId).FirstOrDefault();
         }
 
         public List<Order> GetOrders()
@@ -40,7 +48,7 @@ namespace e_comm.Repository
 
         public List<Order> GetOrderByUserId(int userId)
         {
-            return _context.Orders_.Include(oi=> oi.OrderItems_).Where(x => x.UserId == userId).ToList();
+            return _context.Orders_.Include(oi => oi.OrderItems_).Where(x => x.UserId == userId).ToList();
         }
 
         public int UpdateOrder(int orderId, Order order)
@@ -49,51 +57,52 @@ namespace e_comm.Repository
             if (O != null)
             {
                 O.ShippingAddress = order.ShippingAddress;
-                //O.OrderDate = order.OrderDate;
-                //O.UserId = order.UserId;
-                //O.OrderStatus = order.OrderStatus;
                 _context.Entry(O).State = EntityState.Modified;
-                int result = _context.SaveChanges();
-                return result;
+                return _context.SaveChanges();
             }
             return 0;
         }
 
-        public int UpdateOrderStatus(int orderId, OrderStatus newStatus)
+        public OrderStatus CalculateOrderStatus(Order order)
         {
-            Order O = _context.Orders_.Where(x => x.OrderId == orderId).FirstOrDefault();
-            if (O != null)
+            if (order.PaymentStatus == PaymentStatus.Pending)
             {
-                O.OrderStatus = newStatus; // Update the order status
-                _context.Entry(O).State = EntityState.Modified;
-                return _context.SaveChanges();
+                return OrderStatus.Pending;
             }
-            return 0; // Return 0 if the order was not found
+            else if (order.PaymentStatus == PaymentStatus.Completed)
+            {
+                var daysSinceOrder = (DateTime.Now - order.OrderDate).Days;
+
+                if (daysSinceOrder == 0)
+                {
+                    return OrderStatus.Processing;
+                }
+                else if (daysSinceOrder >= 2 && daysSinceOrder <= 8)
+                {
+                    return OrderStatus.Shipped;
+                }
+                else if (daysSinceOrder > 8 && daysSinceOrder <= 10)
+                {
+                    return OrderStatus.Delivered;
+                }
+            }
+            return OrderStatus.Pending;
         }
 
-        //public int UpdateOrderTotal(int orderId, decimal newTotalBaseAmount, decimal newShippingCost)
-        //{
-        //    Order O = _context.Orders_.Where(x => x.OrderId == orderId).FirstOrDefault();
-        //    if (O != null)
-        //    {
-        //        O.TotalBaseAmount = newTotalBaseAmount;
-        //        O.ShippingCost = newShippingCost;
-        //        O.TotalAmount = newTotalBaseAmount + newShippingCost; // Recalculate total amount
-        //        _context.Entry<Order>(O).State = EntityState.Modified;
-        //        return _context.SaveChanges();
-        //    }
-        //    return 0; // Return 0 if the order was not found
-        //}
+        public OrderStatus GetOrderStatus(int orderId)
+        {
+            return _context.Orders_.Where(x => x.OrderId == orderId).Select(x => x.OrderStatus).FirstOrDefault();
+        }
 
-        public bool UpdateTotalBaseAmount(int orderId)
+        public bool UpdateTotalCalculations(int orderId)
         {
             Order order = GetOrderByOrderId(orderId);
-            if(order != null)
+            if (order != null)
             {
                 order.TotalBaseAmount = order.OrderItems_.Sum(i => i.TotalPrice);
                 order.ShippingCost = order.TotalBaseAmount > 1000 ? 0 : 100;
                 order.TotalAmount = order.TotalBaseAmount + order.ShippingCost;
-                return _context.SaveChanges()>0;
+                return _context.SaveChanges() > 0;
             }
             return false;
         }

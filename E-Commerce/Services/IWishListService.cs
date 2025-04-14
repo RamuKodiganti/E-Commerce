@@ -7,5 +7,6 @@ namespace e_comm.Services
         void AddToWishlist(int userId, int productId);
         void RemoveFromWishlist(int userId, int productId);
         List<Product> GetWishlist(int userId);
+        void MoveWishlistToCart(int userId);
     }
 }

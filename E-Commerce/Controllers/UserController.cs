@@ -1,6 +1,10 @@
-﻿using e_comm.Auth;
+﻿using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
+using e_comm.Auth;
 using e_comm.Models;
 using e_comm.Services;
+using E_Commerce.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UserWebAPI.Exceptions;
@@ -15,6 +19,7 @@ namespace e_comm.Controllers
     {
         private readonly IUserService service;
         private readonly IAuth auth;
+
 
         public UserController(IAuth auth, IUserService service)
         {
@@ -44,7 +49,7 @@ namespace e_comm.Controllers
             {
                 return Ok(service.GetUser(id));
             }
-            catch (CustomerNotFoundException ex)
+            catch (UserNotFoundException ex)
             {
                 return NotFound(ex.Message);
             }
@@ -56,13 +61,18 @@ namespace e_comm.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult AddUser(User user)
+        public IActionResult Register(User user)
         {
             try
             {
-                return StatusCode(201, service.AddUser(user));
+                var message = "User added successfully";
+                // Hash the password before saving
+                //user.Password = HashPassword(user.Password);
+                //user.Password = HashPassword(user.Password);
+                service.AddUser(user);
+                return StatusCode(201, message);
             }
-            catch (CustomerAlreadyExistsException ex)
+            catch (UserAlreadyExistsException ex)
             {
                 return Conflict(ex.Message);
             }
@@ -72,14 +82,20 @@ namespace e_comm.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Put(int id, User user)
+        [HttpPut("{email}")]
+        //[Authorize(Roles = "User")]
+        //[Authorize(Roles = "Admmin")]
+        [AllowAnonymous]
+
+        public IActionResult Update(string email, UserDto userDto)
         {
             try
             {
-                return Ok(service.UpdateUser(id, user));
+                var message = "Password updated successfully";
+                service.UpdateUser(email, userDto);
+                return Ok(message);
             }
-            catch (CustomerNotFoundException ex)
+            catch (UserNotFoundException ex)
             {
                 return NotFound(ex.Message);
             }
@@ -90,13 +106,17 @@ namespace e_comm.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Admmin")]
         public IActionResult Delete(int id)
         {
             try
             {
-                return Ok(service.DeleteUser(id));
+                var message = $"Delete UserId:{id} successfully";
+                service.DeleteUser(id);
+                return Ok(message);
             }
-            catch (CustomerNotFoundException ex)
+            catch (UserNotFoundException ex)
             {
                 return NotFound(ex.Message);
             }
@@ -106,8 +126,8 @@ namespace e_comm.Controllers
             }
         }
 
+        [HttpPost("Login")]
         [AllowAnonymous]
-        [HttpPost("authentication")]
         public IActionResult Authentication([FromBody] UserCredentials user)
         {
             try
@@ -115,14 +135,28 @@ namespace e_comm.Controllers
                 var token = auth.Authentication(user.Email, user.Password);
                 if (token == null)
                 {
-                    return Unauthorized();
+                    return Unauthorized(new { error = "Invalid email or password" });
                 }
                 return Ok(token);
+                //return Ok(new { token, role = user.Role });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
             }
         }
+        //private string HashPassword(string password)
+        //{
+        //    using (var sha256 = SHA256.Create())
+        //    {
+        //        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        //        var builder = new StringBuilder();
+        //        foreach (var b in bytes)
+        //        {
+        //            builder.Append(b.ToString("x2"));
+        //        }
+        //        return builder.ToString();
+        //    }
+        //}
     }
 }

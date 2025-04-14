@@ -9,7 +9,6 @@ namespace e_comm.DTO
         //[Key]
         //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         //public int ProductId { get; set; }
-        
         [Required(ErrorMessage = "Product Name is required")]
         [StringLength(30, ErrorMessage = "Product name must be less than 30 characters")]
         public string ProductName { get; set; }
@@ -19,7 +18,7 @@ namespace e_comm.DTO
         public string Desc { get; set; }
 
         [Required(ErrorMessage = "Stock quantity must be greater than zero.")]
-        [Range(1, 150, ErrorMessage = "Stock quantity must be between 1 and 150.")]
+        [Range(1, 1500, ErrorMessage = "Stock quantity must be between 1 and 1500.")]
         public int StockQuantity { get; set; }
 
         [Required(ErrorMessage = "The Price is required")]

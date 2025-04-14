@@ -46,11 +46,11 @@ namespace E_comm.Models
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
 
-          //  modelBuilder.Entity<ShoppingCart>()
-            //    .HasOne(sc => sc.User)
-               // .WithOne(u => u.ShoppingCart)
-               // .HasForeignKey<ShoppingCart>(sc => sc.UserId)
-              //  .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ShoppingCart>()
+                .HasOne(sc => sc.User)
+                .WithOne(u => u.ShoppingCart)
+                .HasForeignKey<ShoppingCart>(sc => sc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<CartItem>()
                 .HasOne(ci => ci.ShoppingCart)

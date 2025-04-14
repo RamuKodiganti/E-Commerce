@@ -3,20 +3,25 @@ using E_comm.Models;
 using Microsoft.AspNetCore.Mvc;
 using E_comm.Exceptions;
 using E_comm.Aspects;
+using e_comm.Auth;
+using Microsoft.AspNetCore.Authorization;
 
 namespace e_comm.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService service;
-
-        public CategoryController(ICategoryService service)
+        private readonly IAuth auth;
+        public CategoryController(IAuth auth, ICategoryService service)
         {
+            this.auth = auth;
             this.service = service;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Get()
         {
@@ -30,6 +35,7 @@ namespace e_comm.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public IActionResult GetCategoryById(int id)
         {
@@ -47,6 +53,7 @@ namespace e_comm.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult Post(Category category)
         {
@@ -58,7 +65,8 @@ namespace e_comm.Controllers
                 }
 
                 var createdCategory = service.AddCategory(category);
-                return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryID }, createdCategory);
+                var message = "New Category added successfully";
+                return Ok(message);
             }
             catch (CategoryAlreadyExistsException ex)
             {
@@ -70,6 +78,7 @@ namespace e_comm.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody] string categoryName)
         {
@@ -86,10 +95,11 @@ namespace e_comm.Controllers
                     return NotFound($"Category with ID {id} does not exist.");
                 }
 
+                var message = "Category updated.";
                 category.CategoryName = categoryName;
                 service.UpdateCategory(category);
 
-                return NoContent();
+                return Ok(message);
             }
             catch (CategoryNotFoundException ex)
             {
@@ -101,12 +111,15 @@ namespace e_comm.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             try
             {
-                return Ok(service.DeleteCategory(id));
+                service.DeleteCategory(id);
+                var message = "Category deleted successfully";
+                return Ok(message);
             }
             catch (CategoryNotFoundException ex)
             {
@@ -118,6 +131,7 @@ namespace e_comm.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("category/{id}/stock")]
         public IActionResult GetTotalStockForCategory(int id)
         {
@@ -136,6 +150,7 @@ namespace e_comm.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("category/{categoryId}/sorted-by-price")]
         public IActionResult GetProductsByCategorySortedByPrice(int categoryId)
         {
@@ -143,6 +158,10 @@ namespace e_comm.Controllers
             {
                 var products = service.GetProductsByCategorySortedByPrice(categoryId);
                 return Ok(products);
+            }
+            catch (CategoryNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {

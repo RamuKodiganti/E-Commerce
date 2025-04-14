@@ -1,4 +1,5 @@
 ﻿using e_comm.Models;
+using E_Commerce.DTO;
 
 namespace e_comm.Services
 {
@@ -7,7 +8,7 @@ namespace e_comm.Services
         List<User> GetUsers();
         User GetUser(int id);
         int AddUser(User user);
-        int UpdateUser(int id, User user);
+        int UpdateUser(string email, UserDto userDto);
         int DeleteUser(int id);
     }
 }

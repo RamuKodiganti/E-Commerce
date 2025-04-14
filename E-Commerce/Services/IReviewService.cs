@@ -11,8 +11,7 @@ namespace e_comm.Services
 
         List<ReviewWithDetailsDTO> GetReviewsForProduct(int productId);
 
-        //List<Review> GetReviewsForProduct(int productId);
+        IEnumerable<ReviewWithDetailsDTO> GetReviewsByProductName(string productName);
 
-        //void DeleteReview(int id);
     }
 }

@@ -12,12 +12,12 @@ namespace e_comm.Models
     public class Review
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ReviewId { get; set; }
 
 
         [Required]
-        public int ProductId {  get; set; }
+        public int ProductId { get; set; }
 
         [ForeignKey("ProductId")]
         public Product Product { get; set; }
@@ -28,13 +28,11 @@ namespace e_comm.Models
         public User User { get; set; }
 
 
-
-        [Range(1,5,ErrorMessage = "Rating must be between 1 and 5.")]
-        public int Rating {  get; set; }
+        [Range(1, 5, ErrorMessage = "Rating must be between 1 and 5.")]
+        public int Rating { get; set; }
 
         public string ReviewText { get; set; }
 
         public DateOnly PostedDate { get; set; }
-        //include userid
     }
 }

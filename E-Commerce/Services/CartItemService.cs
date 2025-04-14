@@ -38,14 +38,26 @@ namespace e_comm.Services
             await _cartItemRepository.DeleteCartItemAsync(cartItemId);
         }
 
-        public async  Task<Order> CheckOutCartAsync(int cartId)
+        public async Task<Order> CheckOutCartAsync(int cartId)
         {
-            var order =_cartItemRepository.CheckOutCart(cartId);
+            var order = await _cartItemRepository.CheckOutCartAsync(cartId);
             if (order == null)
             {
                 throw new Exception("Cart not found or empty.");
             }
             return order;
+        }
+        public void UpdateCartItemStatus(int cartItemId, CartItemStatus newStatus)
+        {
+            var cartItem = _cartItemRepository.GetCartItemByIdAsync(cartItemId).Result;
+
+            if (cartItem == null)
+            {
+                throw new Exception("Cart Item not found.");
+            }
+
+            cartItem.Status = newStatus;
+            _cartItemRepository.UpdateCartItemAsync(cartItem).Wait();
         }
 
     }

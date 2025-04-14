@@ -33,6 +33,7 @@ namespace e_comm.Models.Orders
         public decimal TotalAmount { get; set; }
 
         [Required]
+        [EnumDataType(typeof(OrderStatus), ErrorMessage = "Invalid Order Status.")]
         public PaymentStatus PaymentStatus { get; set; }
 
         [Required]
@@ -43,7 +44,7 @@ namespace e_comm.Models.Orders
         public DateTime OrderDate { get; set; }
 
         public virtual ICollection<OrderItem> OrderItems_ { get; set; } = new List<OrderItem>();
-        //public virtual ICollection<OrderItem> OrderItems_ { get; set; }
+
 
 
     }

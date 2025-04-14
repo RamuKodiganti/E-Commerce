@@ -1,16 +1,16 @@
-﻿using e_comm.Models;
+﻿using e_comm.DTO;
+using e_comm.Models;
 
 namespace e_comm.Repository
 {
     public interface IReviewRepository
     {
         int AddReview(Review review);
-        //review product by productid as well as productname
         Review GetReviewByReviewId(int id);
 
-        List<Review> GetReviewsForProduct(int productId);
+        List<ReviewWithDetailsDTO> GetReviewsForProduct(int productId);
 
-        //  void DeleteReview(int id);
+        IEnumerable<ReviewWithDetailsDTO> GetReviewsByProductName(string productName);
 
 
     }

@@ -31,9 +31,7 @@ namespace e_comm.Repository
 
         public async Task<CartItem> GetCartItemByIdAsync(int cartItemId)
         {
-            return await _context.CartItems
-                .Include(ci => ci.Product)
-                .FirstOrDefaultAsync(ci => ci.CartItemId == cartItemId);
+            return await _context.CartItems.Include(ci => ci.Product).FirstOrDefaultAsync(ci => ci.CartItemId == cartItemId);
         }
 
         public async Task UpdateCartItemAsync(CartItem cartItem)
@@ -51,42 +49,149 @@ namespace e_comm.Repository
                 await _context.SaveChangesAsync();
             }
         }
-        public Order CheckOutCart(int cartId)
-        {
-            var cart = _context.ShoppingCartTable
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product) // Ensure Product is included
-                .FirstOrDefault(c => c.CartId == cartId);
+        public async Task<Order> CheckOutCartAsync(int cartId)
 
-            if (cart == null)
+        {
+
+            try
+
             {
-                return null;
+
+                var cart = await _context.ShoppingCartTable
+
+                    .Include(c => c.CartItems)
+
+                    .ThenInclude(ci => ci.Product)
+
+                    .FirstOrDefaultAsync(c => c.CartId == cartId);
+
+                if (cart == null || !cart.CartItems.Any())
+
+                {
+
+                    return null; // Cart not found or empty
+
+                }
+
+                var newOrder = new Order
+
+                {
+
+                    UserId = cart.UserId,
+
+                    OrderStatus = OrderStatus.Pending,
+
+                    OrderDate = DateTime.Now,
+
+                    TotalBaseAmount = (decimal)cart.CartItems.Sum(item => item.TotalPrice),
+
+                    PaymentStatus = PaymentStatus.Pending,
+
+                    OrderItems_ = cart.CartItems.Select(ci => new OrderItem
+
+                    {
+
+                        ProductId = ci.ProductId,
+
+                        Product = ci.Product,
+
+                        Quantity = ci.Quantity,
+
+                        TotalPrice = (decimal)ci.Product.Price * ci.Quantity
+
+                    }).ToList()
+
+                };
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
+
+                {
+
+                    await _context.Orders_.AddAsync(newOrder);
+
+                    foreach (var orderItem in newOrder.OrderItems_)
+
+                    {
+
+                        var product = await _context.Products.FindAsync(orderItem.ProductId);
+
+                        if (product != null)
+
+                        {
+
+                            if (product.StockQuantity >= orderItem.Quantity)
+
+                            {
+
+                                product.StockQuantity -= orderItem.Quantity;
+
+                                _context.Products.Update(product);
+
+                            }
+
+                            else
+
+                            {
+
+                                throw new InvalidOperationException($"Insufficient stock for product {product.ProductName}.");
+
+                            }
+
+                        }
+
+                    }
+
+                    foreach (var cartItem in cart.CartItems)
+
+                    {
+
+                        cartItem.Status = CartItemStatus.Ordered;
+
+                        _context.CartItems.Update(cartItem);
+
+                    }
+
+                    cart.Status = CartStatus.Completed;
+
+                    _context.ShoppingCartTable.Update(cart);
+
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+
+                }
+
+                catch
+
+                {
+
+                    await transaction.RollbackAsync();
+
+                    throw;
+
+                }
+
+                return newOrder;
+
             }
 
-            Order newOrder = new Order
+            catch (Exception ex)
+
             {
-                UserId = cart.UserId,
-                OrderStatus = OrderStatus.Pending, 
-                OrderDate = DateTime.Now,
-                TotalBaseAmount = (decimal)cart.CartItems.Sum(item => item.TotalPrice),
-                PaymentStatus = PaymentStatus.Pending,
-                OrderItems_ = cart.CartItems.Select(ci => new OrderItem
-                {
-                    ProductId = ci.ProductId,
-                    Product = new Product
-                    {
-                        Price = ci.Product.Price
-                    },
-                    Quantity = ci.Quantity,
-                    TotalPrice = (decimal)ci.Product.Price * ci.Quantity 
-                }).ToList()
-            };
 
-            _context.Orders_.Add(newOrder);
-            _context.SaveChanges();
+                Console.WriteLine($"Error during checkout: {ex.Message}");
 
-            return newOrder;
+                throw;
+
+            }
+
         }
+
+
+
+
     }
 
 }

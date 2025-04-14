@@ -4,6 +4,7 @@ using E_comm.Models;
 using E_comm.Aspects;
 using e_comm.DTO;
 using e_comm.Repository;
+using E_Commerce.DTO;
 
 namespace E_comm.Services
 
@@ -89,11 +90,14 @@ namespace E_comm.Services
 
                 Imgurl = p.Imgurl,
 
-                AddedDate = p.AddedDate
+                AddedDate = p.AddedDate,
+
+                AverageRating = p.AverageRating
 
             };
 
         }
+
 
         public List<ProductWithCategoryDTO> GetProducts()
 
@@ -119,13 +123,15 @@ namespace E_comm.Services
 
                 Imgurl = p.Imgurl,
 
-                AddedDate = p.AddedDate
+                AddedDate = p.AddedDate,
+
+                AverageRating = p.AverageRating
 
             }).ToList();
 
         }
 
-        public int UpdateProduct(int id, Product product)
+        public int UpdateProduct(int id, ProductUpdateDto product)
 
         {
 
@@ -133,7 +139,7 @@ namespace E_comm.Services
 
             {
 
-                throw new ProductNotFoundException($"Product with customer id {id} does not exists");
+                throw new ProductNotFoundException($"Product with product id {id} does not exists");
 
             }
 
@@ -145,7 +151,7 @@ namespace E_comm.Services
 
         {
 
-            return repo.SortProductByPriceDesc();
+            return repo.SortProductByPriceDesc().ToList();
 
         }
 
@@ -165,13 +171,6 @@ namespace E_comm.Services
 
         }
 
-        //public Product AddProduct(Product product)
-
-        //{
-
-        //    return repo.AddProduct(product);
-
-        //}
 
         public bool CategoryExists(int categoryId)
 
@@ -243,5 +242,5 @@ namespace E_comm.Services
 
     }
 
-}
 
+}

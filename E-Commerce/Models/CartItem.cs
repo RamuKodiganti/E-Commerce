@@ -29,5 +29,14 @@ namespace e_comm.Models
         [Required]
 
         public double TotalPrice => Product != null ? Quantity * Product.Price : 0;
+        [Required]
+        public CartItemStatus Status { get; set; } = CartItemStatus.Pending;
+
+    }
+    public enum CartItemStatus
+    {
+        Pending = 0,
+        Ordered = 1,
+        Removed = 2
     }
 }

@@ -1,5 +1,7 @@
 ﻿using e_comm.Models;
 using E_comm.Models;
+using E_Commerce.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace e_comm.Repository
 {
@@ -11,8 +13,6 @@ namespace e_comm.Repository
         {
             this.db = db;
         }
-
-
         public int AddUser(User user)
         {
             db.Users.Add(user);
@@ -39,15 +39,20 @@ namespace e_comm.Repository
             return db.Users.ToList();
         }
 
-        public int UpdateUser(int id, User user)
+        public User GetUserByEmail(string email)
         {
-            User user1 = db.Users.Where(x => x.UserId == id).FirstOrDefault();
-            user1.UserName = user.UserName;
-            user1.Email = user.Email;
-            user1.Password = user.Password;
-            user1.Role = user.Role;
-            db.Entry(user1).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            return db.SaveChanges();
+            return db.Users.FirstOrDefault(x => x.Email == email);
+        }
+
+        public int UpdateUser(string email, UserDto userDto)
+        {
+            var user = db.Users.FirstOrDefault(x => x.Email == email);
+            if (user != null)
+            {
+                user.Password = userDto.Password;
+                return db.SaveChanges();
+            }
+            return 0;
         }
 
     }

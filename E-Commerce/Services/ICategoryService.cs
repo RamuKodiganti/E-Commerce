@@ -1,4 +1,5 @@
-﻿using E_comm.Models;
+﻿using e_comm.DTO;
+using E_comm.Models;
 
 namespace e_comm.Services
 {
@@ -14,7 +15,7 @@ namespace e_comm.Services
 
         int DeleteCategory(int id);
 
-        List<Product> GetProductsByCategorySortedByPrice(int categoryId);
+        List<ProductWithCategoryDTO> GetProductsByCategorySortedByPrice(int categoryId);
 
 
     }

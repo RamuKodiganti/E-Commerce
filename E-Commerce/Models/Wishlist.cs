@@ -8,14 +8,14 @@ namespace e_comm.Models
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int WishListId {  get; set; }
+        public int WishListId { get; set; }
 
         [ForeignKey("User")]
-        public int UserId {  get; set; }
+        public int UserId { get; set; }
         public User User { get; set; }
 
         [ForeignKey("Product")]
-        public int ProductId {  get; set; }
+        public int ProductId { get; set; }
         public Product Product { get; set; }
     }
 }
